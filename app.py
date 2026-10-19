@@ -74,7 +74,7 @@ st.markdown("""
         margin: 10px 0;
     }
 
-    /* Distinct Monthly Membership Theme (Navy/Slate Executive Border) */
+    /* Distinct Monthly Membership Theme (Navy/Executive Border) */
     .member-zone {
         background-color: #f8fafc;
         border: 2px solid #1e3a8a;
@@ -140,7 +140,7 @@ RATES = {
 # ==============================================================================
 # 3. DATABASE INITIALIZATION
 # ==============================================================================
-DB_FILE = "algebra_playhouse_v2.db"
+DB_FILE = "algebra_playhouse_v3.db"
 
 def get_conn():
     return sqlite3.connect(DB_FILE, check_same_thread=False)
@@ -221,7 +221,7 @@ def init_db():
         is_closed INTEGER DEFAULT 0
     )''')
 
-    # Ensure Master Admin is linked to thealgebraplayhouse@gmail.com
+    # Ensure Admin exists with Official Email and ID 'ADMIN01'
     c.execute("SELECT * FROM users WHERE role='admin'")
     if not c.fetchone():
         c.execute('''INSERT INTO users (emp_id, name, email, password, role)
@@ -262,12 +262,10 @@ def set_setting(key, val):
 # 4. WHITE PDF INVOICE GENERATOR (TIMES NEW ROMAN) & CLOUD SYNC
 # ==============================================================================
 def generate_invoice_pdf_bytes(bill):
-    """Generates a formal white Cash Bill in Times New Roman."""
     pdf = FPDF(format=(105, 165))
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=8)
 
-    # Top Header
     pdf.set_font("Times", "B", 9)
     pdf.cell(45, 5, "CASH BILL", ln=0)
     pdf.cell(45, 5, f"GST No: {ENTERPRISE_GST}", ln=1, align="R")
@@ -280,7 +278,6 @@ def generate_invoice_pdf_bytes(bill):
     pdf.multi_cell(0, 3.8, f"{ENTERPRISE_ADDRESS}\nPh: {OFFICIAL_PHONE} | {OFFICIAL_EMAIL}", align="C")
     pdf.ln(2)
 
-    # Bill Meta
     pdf.set_font("Times", "B", 8.5)
     pdf.cell(45, 4.5, f"S.No: {bill['sno']}", ln=0)
     pdf.cell(45, 4.5, f"Date: {bill['bill_date']}", ln=1, align="R")
@@ -291,7 +288,6 @@ def generate_invoice_pdf_bytes(bill):
     pdf.line(10, pdf.get_y() + 1, 95, pdf.get_y() + 1)
     pdf.ln(2)
 
-    # Table Header
     pdf.set_font("Times", "B", 8.5)
     pdf.cell(44, 5, "DESCRIPTION", ln=0)
     pdf.cell(10, 5, "QTY", ln=0, align="C")
@@ -300,7 +296,6 @@ def generate_invoice_pdf_bytes(bill):
     pdf.line(10, pdf.get_y(), 95, pdf.get_y())
     pdf.ln(1)
 
-    # Items
     pdf.set_font("Times", "", 8.5)
     pkg_label = "Group Combo" if bill["num_kids"] > 1 else bill["package"][:22]
     pdf.cell(44, 4.8, pkg_label, ln=0)
@@ -359,7 +354,6 @@ def generate_invoice_pdf_bytes(bill):
     return bytes(pdf.output())
 
 def upload_to_gdrive(file_bytes, filename, mime_type="application/pdf"):
-    """Uploads invoice or closing report directly to thealgebraplayhouse@gmail.com Drive folder."""
     if not GDRIVE_AVAILABLE or "GDRIVE_SERVICE_ACCOUNT" not in st.secrets:
         return False, "Saved locally (Add Google Drive key in Streamlit Secrets for auto-cloud sync)."
     try:
@@ -380,7 +374,6 @@ def upload_to_gdrive(file_bytes, filename, mime_type="application/pdf"):
         return False, f"Drive Sync Note: {e}"
 
 def send_email_with_excel(excel_bytes, filename, subject, body_text):
-    """Emails Master Excel report to thealgebraplayhouse@gmail.com."""
     admin_email = get_setting("admin_email", OFFICIAL_EMAIL)
     if "SMTP_PASSWORD" not in st.secrets:
         return False, f"Add Gmail App Password in Secrets to auto-email {admin_email}."
@@ -422,7 +415,7 @@ def time_overlaps(start_a_str, end_a_str, start_b, end_b):
         return False
 
 # ==============================================================================
-# 5. LOGIN SCREEN
+# 5. LOGIN SCREEN (EMPLOYEE ID + PASSWORD OR ADMIN GMAIL + PASSWORD)
 # ==============================================================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -441,13 +434,14 @@ if not st.session_state.logged_in:
         </div>
         """, unsafe_allow_html=True)
         with st.form("login_form"):
-            login_input = st.text_input("Admin Gmail or Employee ID", placeholder=OFFICIAL_EMAIL)
+            login_input = st.text_input("Admin Gmail OR Employee ID", placeholder="e.g. thealgebraplayhouse@gmail.com OR EMP01")
             pwd_input = st.text_input("Password", type="password")
             login_btn = st.form_submit_button("Sign In", use_container_width=True, type="primary")
 
             if login_btn:
                 conn = get_conn()
                 c = conn.cursor()
+                # Check matching either emp_id (case-insensitive) OR email (case-insensitive)
                 c.execute(
                     "SELECT emp_id, name, email, role FROM users WHERE (lower(emp_id)=lower(?) OR lower(email)=lower(?)) AND password=?",
                     (login_input.strip(), login_input.strip(), pwd_input.strip())
@@ -468,13 +462,16 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==============================================================================
-# 6. TOP HEADER BAR & HORIZONTAL TABS (NO DOT PAGES)
+# 6. TOP HEADER BAR & HORIZONTAL TABS
 # ==============================================================================
 user = st.session_state.user
 hdr_left, hdr_right = st.columns([3.5, 1])
 with hdr_left:
-    st.markdown(f"## {ENTERPRISE_TITLE} — Billing & Management Portal")
-    st.caption(f"Logged in: **{user['name']}** (`{user['emp_id']}`) | Account: `{OFFICIAL_EMAIL}` | Dispatch No: `{OFFICIAL_PHONE}`")
+    st.markdown(f"## {ENTERPRISE_TITLE} — Portal")
+    if user["role"] == "admin":
+        st.caption(f"Logged in: **{user['name']}** (Admin | `{OFFICIAL_EMAIL}`)")
+    else:
+        st.caption(f"Logged in: **{user['name']}** (Employee ID: `{user['emp_id']}`)")
 with hdr_right:
     if st.button("Sign Out", use_container_width=True):
         st.session_state.logged_in = False
@@ -500,7 +497,7 @@ else:
     tab_admin = None
 
 # ==============================================================================
-# TAB 1: NEW BILL (POS) — CLEAN WHITE INVOICE & TIMES NEW ROMAN
+# TAB 1: NEW BILL (POS)
 # ==============================================================================
 with tab_pos:
     col_form, col_bill = st.columns([1.25, 1])
@@ -550,7 +547,7 @@ with tab_pos:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---------------- CALCULATIONS ----------------
+    # CALCULATIONS
     base_pkg_rate = RATES[package_name]
     discount_per_kid = 50 if num_kids > 1 else 0
     effective_pkg_rate = base_pkg_rate - discount_per_kid
@@ -588,7 +585,6 @@ with tab_pos:
     time_out_str = time_out.strftime("%H:%M")
     invoice_filename = f"{today_str}_{preview_cust_id}_{time_in.strftime('%H-%M')}.pdf"
 
-    # ---------------- PURE WHITE FORMAL INVOICE PREVIEW ----------------
     with col_bill:
         pkg_display_label = f"Group Combo ({package_name})" if num_kids > 1 else package_name
         socks_row_html = f"<tr><td>Socks</td><td style='text-align:center;'>{num_socks}</td><td style='text-align:right;'>-</td><td style='text-align:right;'>{socks_excl_gst:.2f}</td></tr>" if num_socks > 0 else ""
@@ -780,7 +776,7 @@ with tab_pos:
             )
 
 # ==============================================================================
-# TAB 2: MONTHLY MEMBERSHIPS (NAVY BORDERED THEME - NO INVOICE GENERATED)
+# TAB 2: MONTHLY MEMBERSHIPS
 # ==============================================================================
 with tab_mem:
     st.markdown("""
@@ -1037,10 +1033,10 @@ if tab_admin is not None:
         col_staff, col_cfg = st.columns(2)
 
         with col_staff:
-            st.markdown("#### Create Employee Login")
+            st.markdown("#### Create Employee Login (ID + Password)")
             with st.form("add_emp_form"):
                 new_emp_id = st.text_input("Employee ID *", placeholder="e.g. EMP01")
-                new_emp_name = st.text_input("Employee Name *")
+                new_emp_name = st.text_input("Employee Name *", placeholder="e.g. Rahul")
                 new_emp_pwd = st.text_input("Password *", type="password")
                 new_emp_role = st.selectbox("Role", ["employee", "admin"])
                 if st.form_submit_button("Create Staff Account", use_container_width=True):
@@ -1053,7 +1049,7 @@ if tab_admin is not None:
                                 (new_emp_id.strip(), new_emp_name.strip(), "", new_emp_pwd.strip(), new_emp_role)
                             )
                             conn.commit()
-                            st.success(f"Employee {new_emp_id} added.")
+                            st.success(f"Employee {new_emp_id} added successfully.")
                             st.rerun()
                         except sqlite3.IntegrityError:
                             st.error("Employee ID already exists.")
@@ -1070,8 +1066,8 @@ if tab_admin is not None:
             curr_sno = get_setting("next_sno", "1079")
             curr_card_mode = get_setting("card_fee_base", "Including GST")
             with st.form("settings_form"):
-                st.text_input("Linked Google Account", value=OFFICIAL_EMAIL, disabled=True)
-                st.text_input("Linked SMS / WhatsApp Number", value=OFFICIAL_PHONE, disabled=True)
+                st.text_input("Master Admin Email (Receives Closing Reports)", value=OFFICIAL_EMAIL, disabled=True)
+                st.text_input("Official Dispatch Phone", value=OFFICIAL_PHONE, disabled=True)
                 new_next_sno = st.number_input("Next Bill S.No", min_value=1, value=int(curr_sno))
                 new_card_mode = st.selectbox(
                     "2% Card Surcharge Base",
