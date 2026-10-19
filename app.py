@@ -20,79 +20,110 @@ except ImportError:
     GDRIVE_AVAILABLE = False
 
 # ==============================================================================
-# 1. PAGE CONFIGURATION & MINIMALIST RESPONSIVE UI/UX
+# 1. PAGE CONFIGURATION & TIMES NEW ROMAN PROFESSIONAL UI
 # ==============================================================================
 st.set_page_config(
-    page_title="The aLGeBrA Playhouse | POS & Admin",
-    page_icon="🎈",
+    page_title="The aLGeBrA Playhouse",
+    page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 st.markdown("""
 <style>
-    /* Clean Minimalist Responsive UI */
-    .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1280px; }
-    .pos-card {
+    /* Force Times New Roman across the entire app */
+    html, body, [class*="css"], div, p, span, h1, h2, h3, h4, h5, h6, label, input, button, select, table, th, td {
+        font-family: 'Times New Roman', Times, serif !important;
+    }
+
+    /* Hide sidebar completely for clean mobile & desktop top-tab experience */
+    [data-testid="collapsedControl"] { display: none; }
+    section[data-testid="stSidebar"] { display: none; }
+
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+        max-width: 1180px;
+    }
+
+    /* Minimalist White Cards */
+    .clean-card {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        margin-bottom: 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 18px;
+        margin-bottom: 14px;
     }
-    /* Yellow Cash Bill Preview Styling */
-    .cash-bill {
-        background-color: #fef08a;
-        color: #1f2937;
-        padding: 22px;
-        border-radius: 8px;
-        border: 2px solid #ca8a04;
-        font-family: 'Courier New', Courier, monospace;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+
+    /* Pure White Formal Cash Bill */
+    .white-bill {
+        background-color: #ffffff;
+        color: #000000;
+        padding: 24px;
+        border: 1.5px solid #000000;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        font-family: 'Times New Roman', Times, serif !important;
     }
-    .cash-bill h3, .cash-bill h4, .cash-bill p { margin: 2px 0; color: #111827; }
-    .bill-hr { border-top: 1px dashed #854d0e; margin: 10px 0; }
-    
-    /* Distinct Monthly Membership Theme (Royal Purple Accent) */
-    .member-banner {
-        background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 18px;
+    .white-bill h2, .white-bill h3, .white-bill h4, .white-bill p {
+        margin: 2px 0;
+        color: #000000;
     }
-    .member-card {
-        background-color: #f5f3ff;
-        border: 2px solid #c4b5fd;
-        border-radius: 12px;
+    .bill-divider {
+        border-top: 1px solid #000000;
+        margin: 10px 0;
+    }
+
+    /* Distinct Monthly Membership Theme (Navy/Slate Executive Border) */
+    .member-zone {
+        background-color: #f8fafc;
+        border: 2px solid #1e3a8a;
+        border-radius: 6px;
         padding: 18px;
         margin-bottom: 16px;
     }
-    /* WhatsApp Button */
-    .wa-btn {
-        display: inline-block;
+    .member-header {
+        background-color: #1e3a8a;
+        color: #ffffff !important;
+        padding: 14px 18px;
+        border-radius: 6px;
+        margin-bottom: 14px;
+    }
+
+    /* Action Buttons for WhatsApp & SMS */
+    .action-btn {
+        display: block;
         width: 100%;
         text-align: center;
-        background-color: #25D366;
-        color: white !important;
-        font-weight: 600;
-        padding: 12px 16px;
-        border-radius: 8px;
-        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-decoration: none !important;
         margin-top: 8px;
+        font-size: 1rem;
     }
-    .wa-btn:hover { background-color: #1ebe57; }
+    .wa-btn {
+        background-color: #15803d;
+        color: #ffffff !important;
+        border: 1px solid #14532d;
+    }
+    .sms-btn {
+        background-color: #1d4ed8;
+        color: #ffffff !important;
+        border: 1px solid #1e3a8a;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONSTANTS & RATE CARD
+# 2. BUSINESS DETAILS & RATE CARD
 # ==============================================================================
 ENTERPRISE_TITLE = "The aLGeBrA Playhouse"
 ENTERPRISE_SUBTITLE = "JEYHUMRUTH"
 ENTERPRISE_ADDRESS = "No.32/27, 27th Street, Thillai Ganga Nagar, Chennai - 600 061."
 ENTERPRISE_GST = "33AAVFJ5819R1ZD"
+OFFICIAL_EMAIL = "thealgebraplayhouse@gmail.com"
+OFFICIAL_PHONE = "9345611235"
 
 RATES = {
     "Full House (Weekday)": 600,
@@ -109,7 +140,7 @@ RATES = {
 # ==============================================================================
 # 3. DATABASE INITIALIZATION
 # ==============================================================================
-DB_FILE = "algebra_playhouse.db"
+DB_FILE = "algebra_playhouse_v2.db"
 
 def get_conn():
     return sqlite3.connect(DB_FILE, check_same_thread=False)
@@ -118,13 +149,11 @@ def init_db():
     conn = get_conn()
     c = conn.cursor()
 
-    # Settings table (Admin Gmail, Next S.No, Card Fee Mode)
     c.execute('''CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT
     )''')
 
-    # Users table
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         emp_id TEXT PRIMARY KEY,
         name TEXT,
@@ -133,7 +162,6 @@ def init_db():
         role TEXT
     )''')
 
-    # Transactions table (is_closed=0 means current active 24hr shift; is_closed=1 means archived)
     c.execute('''CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sno INTEGER,
@@ -168,7 +196,6 @@ def init_db():
         is_closed INTEGER DEFAULT 0
     )''')
 
-    # Monthly Members directory
     c.execute('''CREATE TABLE IF NOT EXISTS members (
         member_id TEXT PRIMARY KEY,
         child_name TEXT,
@@ -180,7 +207,6 @@ def init_db():
         created_by TEXT
     )''')
 
-    # Member Visit / Attendance table (is_closed=0 for current shift, 1 for archived)
     c.execute('''CREATE TABLE IF NOT EXISTS member_visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         member_id TEXT,
@@ -195,16 +221,18 @@ def init_db():
         is_closed INTEGER DEFAULT 0
     )''')
 
-    # Default Admin User
+    # Ensure Master Admin is linked to thealgebraplayhouse@gmail.com
     c.execute("SELECT * FROM users WHERE role='admin'")
     if not c.fetchone():
         c.execute('''INSERT INTO users (emp_id, name, email, password, role)
-                     VALUES ('ADMIN01', 'Playhouse Admin', 'admin@gmail.com', 'admin123', 'admin')''')
+                     VALUES ('ADMIN01', 'Administrator', ?, 'admin123', 'admin')''', (OFFICIAL_EMAIL,))
+    else:
+        c.execute("UPDATE users SET email=? WHERE emp_id='ADMIN01'", (OFFICIAL_EMAIL,))
 
-    # Default Settings
     default_settings = {
         "next_sno": "1079",
-        "admin_email": "admin@gmail.com",
+        "admin_email": OFFICIAL_EMAIL,
+        "sender_phone": OFFICIAL_PHONE,
         "card_fee_base": "Including GST"
     }
     for k, v in default_settings.items():
@@ -231,107 +259,109 @@ def set_setting(key, val):
     conn.close()
 
 # ==============================================================================
-# 4. PDF RECEIPT GENERATOR, GOOGLE DRIVE UPLOAD & EMAIL HELPERS
+# 4. WHITE PDF INVOICE GENERATOR (TIMES NEW ROMAN) & CLOUD SYNC
 # ==============================================================================
 def generate_invoice_pdf_bytes(bill):
-    """Generates a clean PDF matching the yellow CASH BILL layout."""
-    pdf = FPDF(format=(105, 165))  # A6 Receipt size
+    """Generates a formal white Cash Bill in Times New Roman."""
+    pdf = FPDF(format=(105, 165))
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=8)
 
-    # Header
-    pdf.set_font("Courier", "B", 9)
+    # Top Header
+    pdf.set_font("Times", "B", 9)
     pdf.cell(45, 5, "CASH BILL", ln=0)
-    pdf.cell(45, 5, f"GST: {ENTERPRISE_GST}", ln=1, align="R")
+    pdf.cell(45, 5, f"GST No: {ENTERPRISE_GST}", ln=1, align="R")
 
-    pdf.set_font("Courier", "B", 13)
+    pdf.set_font("Times", "B", 14)
     pdf.cell(0, 6, ENTERPRISE_TITLE, ln=1, align="C")
-    pdf.set_font("Courier", "B", 9)
-    pdf.cell(0, 4, ENTERPRISE_SUBTITLE, ln=1, align="C")
-    pdf.set_font("Courier", "", 7)
-    pdf.multi_cell(0, 3.5, ENTERPRISE_ADDRESS, align="C")
+    pdf.set_font("Times", "B", 9)
+    pdf.cell(0, 4.5, ENTERPRISE_SUBTITLE, ln=1, align="C")
+    pdf.set_font("Times", "", 8)
+    pdf.multi_cell(0, 3.8, f"{ENTERPRISE_ADDRESS}\nPh: {OFFICIAL_PHONE} | {OFFICIAL_EMAIL}", align="C")
     pdf.ln(2)
 
-    # Meta info
-    pdf.set_font("Courier", "B", 8)
+    # Bill Meta
+    pdf.set_font("Times", "B", 8.5)
     pdf.cell(45, 4.5, f"S.No: {bill['sno']}", ln=0)
     pdf.cell(45, 4.5, f"Date: {bill['bill_date']}", ln=1, align="R")
     pdf.cell(45, 4.5, f"Cust ID: {bill['customer_id']}", ln=0)
-    pdf.cell(45, 4.5, f"Time: {bill['time_in']}-{bill['time_out']}", ln=1, align="R")
-    pdf.cell(0, 4.5, f"Name: {bill['adult_name']} ({bill['phone']})", ln=1)
+    pdf.cell(45, 4.5, f"Time: {bill['time_in']} - {bill['time_out']}", ln=1, align="R")
+    pdf.cell(0, 4.5, f"Name: {bill['adult_name']}  (Ph: {bill['phone']})", ln=1)
 
-    pdf.cell(0, 2, "-" * 48, ln=1)
-    pdf.set_font("Courier", "B", 8)
-    pdf.cell(46, 4.5, "DESCRIPTION", ln=0)
-    pdf.cell(10, 4.5, "QTY", ln=0, align="C")
-    pdf.cell(14, 4.5, "RATE", ln=0, align="R")
-    pdf.cell(18, 4.5, "AMOUNT", ln=1, align="R")
-    pdf.cell(0, 2, "-" * 48, ln=1)
+    pdf.line(10, pdf.get_y() + 1, 95, pdf.get_y() + 1)
+    pdf.ln(2)
 
-    pdf.set_font("Courier", "", 8)
-    # 1. Package Row (Excl GST)
-    pkg_label = "Group Combo" if bill["num_kids"] > 1 else bill["package"][:20]
-    pdf.cell(46, 4.5, pkg_label, ln=0)
-    pdf.cell(10, 4.5, str(bill["num_kids"]), ln=0, align="C")
-    pdf.cell(14, 4.5, "-", ln=0, align="R")
-    pdf.cell(18, 4.5, f"{bill['pkg_excl_gst']:.2f}", ln=1, align="R")
-
-    # 2. Socks Row (Excl GST)
-    if bill["num_socks"] > 0:
-        pdf.cell(46, 4.5, "Socks", ln=0)
-        pdf.cell(10, 4.5, str(bill["num_socks"]), ln=0, align="C")
-        pdf.cell(14, 4.5, "-", ln=0, align="R")
-        pdf.cell(18, 4.5, f"{bill['socks_excl_gst']:.2f}", ln=1, align="R")
-
-    # 3. Water Row (Excl GST)
-    if bill["num_water"] > 0:
-        pdf.cell(46, 4.5, f"Water ({bill['water_gst_pct']:.0f}% GST)", ln=0)
-        pdf.cell(10, 4.5, str(bill["num_water"]), ln=0, align="C")
-        pdf.cell(14, 4.5, "-", ln=0, align="R")
-        pdf.cell(18, 4.5, f"{bill['water_excl_gst']:.2f}", ln=1, align="R")
-
-    # Taxes
+    # Table Header
+    pdf.set_font("Times", "B", 8.5)
+    pdf.cell(44, 5, "DESCRIPTION", ln=0)
+    pdf.cell(10, 5, "QTY", ln=0, align="C")
+    pdf.cell(14, 5, "RATE", ln=0, align="R")
+    pdf.cell(17, 5, "AMOUNT", ln=1, align="R")
+    pdf.line(10, pdf.get_y(), 95, pdf.get_y())
     pdf.ln(1)
-    pdf.cell(46, 4.5, "SGST", ln=0)
-    pdf.cell(10, 4.5, "", ln=0)
-    pdf.cell(14, 4.5, "9%", ln=0, align="R")
-    pdf.cell(18, 4.5, f"{bill['sgst_9']:.2f}", ln=1, align="R")
 
-    pdf.cell(46, 4.5, "CGST", ln=0)
-    pdf.cell(10, 4.5, "", ln=0)
-    pdf.cell(14, 4.5, "9%", ln=0, align="R")
-    pdf.cell(18, 4.5, f"{bill['cgst_9']:.2f}", ln=1, align="R")
+    # Items
+    pdf.set_font("Times", "", 8.5)
+    pkg_label = "Group Combo" if bill["num_kids"] > 1 else bill["package"][:22]
+    pdf.cell(44, 4.8, pkg_label, ln=0)
+    pdf.cell(10, 4.8, str(bill["num_kids"]), ln=0, align="C")
+    pdf.cell(14, 4.8, "-", ln=0, align="R")
+    pdf.cell(17, 4.8, f"{bill['pkg_excl_gst']:.2f}", ln=1, align="R")
+
+    if bill["num_socks"] > 0:
+        pdf.cell(44, 4.8, "Socks", ln=0)
+        pdf.cell(10, 4.8, str(bill["num_socks"]), ln=0, align="C")
+        pdf.cell(14, 4.8, "-", ln=0, align="R")
+        pdf.cell(17, 4.8, f"{bill['socks_excl_gst']:.2f}", ln=1, align="R")
+
+    if bill["num_water"] > 0:
+        pdf.cell(44, 4.8, "Water Bottle", ln=0)
+        pdf.cell(10, 4.8, str(bill["num_water"]), ln=0, align="C")
+        pdf.cell(14, 4.8, "-", ln=0, align="R")
+        pdf.cell(17, 4.8, f"{bill['water_excl_gst']:.2f}", ln=1, align="R")
+
+    pdf.ln(1)
+    pdf.cell(44, 4.8, "SGST", ln=0)
+    pdf.cell(10, 4.8, "", ln=0)
+    pdf.cell(14, 4.8, "9%", ln=0, align="R")
+    pdf.cell(17, 4.8, f"{bill['sgst_9']:.2f}", ln=1, align="R")
+
+    pdf.cell(44, 4.8, "CGST", ln=0)
+    pdf.cell(10, 4.8, "", ln=0)
+    pdf.cell(14, 4.8, "9%", ln=0, align="R")
+    pdf.cell(17, 4.8, f"{bill['cgst_9']:.2f}", ln=1, align="R")
 
     if bill["water_gst_amt"] > 0:
-        pdf.cell(46, 4.5, "Water GST", ln=0)
-        pdf.cell(10, 4.5, "", ln=0)
-        pdf.cell(14, 4.5, f"{bill['water_gst_pct']:.0f}%", ln=0, align="R")
-        pdf.cell(18, 4.5, f"{bill['water_gst_amt']:.2f}", ln=1, align="R")
+        pdf.cell(44, 4.8, "Water GST", ln=0)
+        pdf.cell(10, 4.8, "", ln=0)
+        pdf.cell(14, 4.8, f"{bill['water_gst_pct']:.0f}%", ln=0, align="R")
+        pdf.cell(17, 4.8, f"{bill['water_gst_amt']:.2f}", ln=1, align="R")
 
     if bill["card_fee"] > 0:
-        pdf.cell(46, 4.5, "Card Charge (+2%)", ln=0)
-        pdf.cell(10, 4.5, "", ln=0)
-        pdf.cell(14, 4.5, "2%", ln=0, align="R")
-        pdf.cell(18, 4.5, f"{bill['card_fee']:.2f}", ln=1, align="R")
+        pdf.cell(44, 4.8, "Card Surcharge", ln=0)
+        pdf.cell(10, 4.8, "", ln=0)
+        pdf.cell(14, 4.8, "2%", ln=0, align="R")
+        pdf.cell(17, 4.8, f"{bill['card_fee']:.2f}", ln=1, align="R")
 
-    pdf.cell(0, 2, "-" * 48, ln=1)
-    pdf.set_font("Courier", "B", 10)
-    pdf.cell(65, 6, f"Total ({bill['payment_method']})", ln=0)
-    pdf.cell(23, 6, f"Rs.{bill['final_total']:.2f}", ln=1, align="R")
-    pdf.cell(0, 2, "-" * 48, ln=1)
+    pdf.line(10, pdf.get_y() + 1, 95, pdf.get_y() + 1)
+    pdf.ln(2)
+    pdf.set_font("Times", "B", 10)
+    pdf.cell(60, 6, f"Total ({bill['payment_method']})", ln=0)
+    pdf.cell(25, 6, f"Rs. {bill['final_total']:.2f}", ln=1, align="R")
+    pdf.line(10, pdf.get_y(), 95, pdf.get_y())
 
-    pdf.ln(3)
-    pdf.set_font("Courier", "B", 8)
-    pdf.cell(0, 4, f"For {ENTERPRISE_TITLE}", ln=1, align="R")
-    pdf.set_font("Courier", "", 7)
-    pdf.cell(0, 4, f"Billed by: {bill['emp_name']} ({bill['emp_id']})", ln=1, align="R")
+    pdf.ln(4)
+    pdf.set_font("Times", "B", 8.5)
+    pdf.cell(0, 4.5, f"For {ENTERPRISE_TITLE}", ln=1, align="R")
+    pdf.set_font("Times", "", 7.5)
+    pdf.cell(0, 4, f"Staff: {bill['emp_name']} ({bill['emp_id']})", ln=1, align="R")
 
     return bytes(pdf.output())
 
 def upload_to_gdrive(file_bytes, filename, mime_type="application/pdf"):
-    """Uploads an invoice or Excel master report to the Admin's Google Drive folder if configured."""
+    """Uploads invoice or closing report directly to thealgebraplayhouse@gmail.com Drive folder."""
     if not GDRIVE_AVAILABLE or "GDRIVE_SERVICE_ACCOUNT" not in st.secrets:
-        return False, "Google Drive Service Account not configured in Secrets (Saved locally)."
+        return False, "Saved locally (Add Google Drive key in Streamlit Secrets for auto-cloud sync)."
     try:
         sa_info = json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT"])
         creds = service_account.Credentials.from_service_account_info(
@@ -345,19 +375,20 @@ def upload_to_gdrive(file_bytes, filename, mime_type="application/pdf"):
 
         media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mime_type)
         service.files().create(body=metadata, media_body=media, fields="id").execute()
-        return True, f"Uploaded '{filename}' to Admin Google Drive."
+        return True, f"Synced to {OFFICIAL_EMAIL} Google Drive"
     except Exception as e:
-        return False, f"Drive Upload Error: {e}"
+        return False, f"Drive Sync Note: {e}"
 
 def send_email_with_excel(excel_bytes, filename, subject, body_text):
-    """Emails the Master Excel file to the Admin's Gmail address."""
-    admin_email = get_setting("admin_email", "admin@gmail.com")
-    if "SMTP_EMAIL" not in st.secrets or "SMTP_PASSWORD" not in st.secrets:
-        return False, f"SMTP credentials not set in Streamlit Secrets yet. Target Admin Gmail: {admin_email}"
+    """Emails Master Excel report to thealgebraplayhouse@gmail.com."""
+    admin_email = get_setting("admin_email", OFFICIAL_EMAIL)
+    if "SMTP_PASSWORD" not in st.secrets:
+        return False, f"Add Gmail App Password in Secrets to auto-email {admin_email}."
+    sender_email = st.secrets.get("SMTP_EMAIL", OFFICIAL_EMAIL)
     try:
         msg = EmailMessage()
         msg["Subject"] = subject
-        msg["From"] = st.secrets["SMTP_EMAIL"]
+        msg["From"] = sender_email
         msg["To"] = admin_email
         msg.set_content(body_text)
         msg.add_attachment(
@@ -367,14 +398,13 @@ def send_email_with_excel(excel_bytes, filename, subject, body_text):
             filename=filename
         )
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(st.secrets["SMTP_EMAIL"], st.secrets["SMTP_PASSWORD"])
+            server.login(sender_email, st.secrets["SMTP_PASSWORD"])
             server.send_message(msg)
-        return True, f"Master Excel sent to {admin_email}!"
+        return True, f"Emailed to {admin_email}"
     except Exception as e:
-        return False, f"Email Error: {e}"
+        return False, f"Email Note: {e}"
 
 def build_master_excel(tx_df, emp_summary_df, visits_df):
-    """Creates a multi-sheet Master Excel workbook."""
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         emp_summary_df.to_excel(writer, index=False, sheet_name="Employee Summary")
@@ -383,7 +413,6 @@ def build_master_excel(tx_df, emp_summary_df, visits_df):
     return output.getvalue()
 
 def time_overlaps(start_a_str, end_a_str, start_b, end_b):
-    """Checks if a logged visit [start_a, end_a] overlaps with filter [start_b, end_b]."""
     try:
         fmt = "%H:%M"
         s_a = datetime.strptime(start_a_str[:5], fmt).time()
@@ -393,7 +422,7 @@ def time_overlaps(start_a_str, end_a_str, start_b, end_b):
         return False
 
 # ==============================================================================
-# 5. AUTHENTICATION / LOGIN SCREEN
+# 5. LOGIN SCREEN
 # ==============================================================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -402,25 +431,25 @@ if "last_bill" not in st.session_state:
     st.session_state.last_bill = None
 
 if not st.session_state.logged_in:
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("")
     c1, c2, c3 = st.columns([1, 1.1, 1])
     with c2:
         st.markdown(f"""
-        <div class="pos-card" style="text-align:center;">
-            <h2>🎈 {ENTERPRISE_TITLE}</h2>
-            <p style="color:#6b7280; font-size:0.9rem;">{ENTERPRISE_SUBTITLE} • Staff & Admin Portal</p>
+        <div class="clean-card" style="text-align:center;">
+            <h2>{ENTERPRISE_TITLE}</h2>
+            <p><b>{ENTERPRISE_SUBTITLE}</b><br>{ENTERPRISE_ADDRESS}<br>Ph: {OFFICIAL_PHONE}</p>
         </div>
         """, unsafe_allow_html=True)
         with st.form("login_form"):
-            login_input = st.text_input("Employee ID or Admin Gmail", placeholder="e.g. ADMIN01 or EMP01")
+            login_input = st.text_input("Admin Gmail or Employee ID", placeholder=OFFICIAL_EMAIL)
             pwd_input = st.text_input("Password", type="password")
-            login_btn = st.form_submit_button("Sign In to Dashboard", use_container_width=True, type="primary")
+            login_btn = st.form_submit_button("Sign In", use_container_width=True, type="primary")
 
             if login_btn:
                 conn = get_conn()
                 c = conn.cursor()
                 c.execute(
-                    "SELECT emp_id, name, email, role FROM users WHERE (emp_id=? OR lower(email)=lower(?)) AND password=?",
+                    "SELECT emp_id, name, email, role FROM users WHERE (lower(emp_id)=lower(?) OR lower(email)=lower(?)) AND password=?",
                     (login_input.strip(), login_input.strip(), pwd_input.strip())
                 )
                 row = c.fetchone()
@@ -435,89 +464,93 @@ if not st.session_state.logged_in:
                     }
                     st.rerun()
                 else:
-                    st.error("Invalid Employee ID / Gmail or Password.")
+                    st.error("Invalid ID/Email or Password.")
     st.stop()
 
 # ==============================================================================
-# 6. SIDEBAR NAVIGATION
+# 6. TOP HEADER BAR & HORIZONTAL TABS (NO DOT PAGES)
 # ==============================================================================
 user = st.session_state.user
-st.sidebar.markdown(f"### 🎈 {ENTERPRISE_TITLE}")
-st.sidebar.caption(f"Logged in: **{user['name']}** (`{user['emp_id']}`)")
+hdr_left, hdr_right = st.columns([3.5, 1])
+with hdr_left:
+    st.markdown(f"## {ENTERPRISE_TITLE} — Billing & Management Portal")
+    st.caption(f"Logged in: **{user['name']}** (`{user['emp_id']}`) | Account: `{OFFICIAL_EMAIL}` | Dispatch No: `{OFFICIAL_PHONE}`")
+with hdr_right:
+    if st.button("Sign Out", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user = None
+        st.session_state.last_bill = None
+        st.rerun()
 
-nav_options = [
-    "🧾 POS Billing (Walk-ins)",
-    "👑 Monthly Memberships",
-    "🕒 Live Occupancy & Slot Tracker",
-    "🔒 Shift Closing (24-Hr Reset)"
-]
 if user["role"] == "admin":
-    nav_options.append("📊 Admin Master Portal & Staff")
-
-page = st.sidebar.radio("Navigation", nav_options)
-
-st.sidebar.write("---")
-if st.sidebar.button("🚪 Logout", use_container_width=True):
-    st.session_state.logged_in = False
-    st.session_state.user = None
-    st.session_state.last_bill = None
-    st.rerun()
+    tab_pos, tab_mem, tab_occ, tab_close, tab_admin = st.tabs([
+        "1. New Bill (POS)",
+        "2. Monthly Members",
+        "3. Time-Slot Occupancy",
+        "4. Shift Closing (24h)",
+        "5. Admin & Staff Setup"
+    ])
+else:
+    tab_pos, tab_mem, tab_occ, tab_close = st.tabs([
+        "1. New Bill (POS)",
+        "2. Monthly Members",
+        "3. Time-Slot Occupancy",
+        "4. Shift Closing (24h)"
+    ])
+    tab_admin = None
 
 # ==============================================================================
-# PAGE 1: POS BILLING (WALK-INS)
+# TAB 1: NEW BILL (POS) — CLEAN WHITE INVOICE & TIMES NEW ROMAN
 # ==============================================================================
-if page == "🧾 POS Billing (Walk-ins)":
-    st.subheader("🧾 Customer Billing & Official Cash Bill")
-
-    col_form, col_preview = st.columns([1.35, 1])
+with tab_pos:
+    col_form, col_bill = st.columns([1.25, 1])
 
     with col_form:
-        st.markdown('<div class="pos-card">', unsafe_allow_html=True)
-        st.markdown("##### 1. Customer & Session Timing")
-        r1c1, r1c2 = st.columns(2)
-        with r1c1:
-            adult_name = st.text_input("Parent / Adult Name *", placeholder="e.g. Ramachandran")
-        with r1c2:
-            phone = st.text_input("WhatsApp Phone Number *", placeholder="10-digit mobile number", max_chars=15)
+        st.markdown('<div class="clean-card">', unsafe_allow_html=True)
+        st.markdown("#### Customer & Session Details")
+        c1, c2 = st.columns(2)
+        with c1:
+            adult_name = st.text_input("Parent / Adult Name *", placeholder="Enter Full Name")
+        with c2:
+            phone = st.text_input("Customer Mobile / WhatsApp *", placeholder="10-digit mobile number", max_chars=15)
 
         now_dt = datetime.now()
         default_in = now_dt.time().replace(second=0, microsecond=0)
         default_out = (now_dt + timedelta(hours=1)).time().replace(second=0, microsecond=0)
 
-        r2c1, r2c2 = st.columns(2)
-        with r2c1:
-            time_in = st.time_input("Time In (Start Time)", value=default_in)
-        with r2c2:
-            time_out = st.time_input("Expected Time Out", value=default_out)
+        t1, t2 = st.columns(2)
+        with t1:
+            time_in = st.time_input("Time In", value=default_in)
+        with t2:
+            time_out = st.time_input("Time Out", value=default_out)
 
-        st.markdown("##### 2. Package, Kids & Add-ons")
+        st.markdown("#### Package & Add-Ons")
         p1, p2 = st.columns([2, 1])
         with p1:
-            package_name = st.selectbox("Select Package (18% GST Inclusive)", list(RATES.keys()))
+            package_name = st.selectbox("Package (18% GST Inclusive)", list(RATES.keys()))
         with p2:
-            num_kids = st.number_input("No. of Kids Playing", min_value=1, step=1, value=1)
+            num_kids = st.number_input("No. of Kids", min_value=1, step=1, value=1)
 
         s1, s2 = st.columns(2)
         with s1:
-            num_socks = st.number_input("Socks Qty (₹50 / pair)", min_value=0, step=1, value=0)
+            num_socks = st.number_input("Socks Qty (Rs. 50 each)", min_value=0, step=1, value=0)
         with s2:
             socks_gst_pct = st.selectbox("Socks GST %", [18.0, 12.0, 6.0, 5.0, 0.0], index=0)
 
         w1, w2 = st.columns(2)
         with w1:
-            num_water = st.number_input("Water Bottle Qty (₹10 / bottle)", min_value=0, step=1, value=0)
+            num_water = st.number_input("Water Bottle Qty (Rs. 10 each)", min_value=0, step=1, value=0)
         with w2:
             water_gst_pct = st.selectbox("Water Bottle GST %", [6.0, 5.0, 12.0, 18.0, 0.0], index=0)
 
-        st.markdown("##### 3. Payment Method")
-        payment_method = st.radio(
-            "Choose Payment Mode",
-            ["Cash", "UPI / GPay", "Card (+2% Charge)"],
-            horizontal=True
+        st.markdown("#### Payment Method")
+        payment_method = st.selectbox(
+            "Select Payment Mode",
+            ["Cash", "UPI / GPay", "Card (+2% Charge)"]
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---------------- BILL MATH (MATCHING YELLOW CASH BILL) ----------------
+    # ---------------- CALCULATIONS ----------------
     base_pkg_rate = RATES[package_name]
     discount_per_kid = 50 if num_kids > 1 else 0
     effective_pkg_rate = base_pkg_rate - discount_per_kid
@@ -526,14 +559,12 @@ if page == "🧾 POS Billing (Walk-ins)":
     socks_total_incl = num_socks * 50
     water_total_incl = num_water * 10
 
-    # Package & Socks GST (9% SGST + 9% CGST on inclusive price, matching receipt 1300 -> 989, 82, 117, 117)
     sgst_9 = round(pkg_total_incl * 0.09 + socks_total_incl * (socks_gst_pct / 200.0))
     cgst_9 = round(pkg_total_incl * 0.09 + socks_total_incl * (socks_gst_pct / 200.0))
 
     pkg_excl_gst = round(pkg_total_incl * 0.82)
     socks_excl_gst = round(socks_total_incl * (1.0 - (socks_gst_pct / 100.0)))
 
-    # Water GST (6% default on ₹10)
     water_gst_amt = round(water_total_incl * (water_gst_pct / 100.0), 2)
     water_excl_gst = round(water_total_incl - water_gst_amt, 2)
 
@@ -557,45 +588,45 @@ if page == "🧾 POS Billing (Walk-ins)":
     time_out_str = time_out.strftime("%H:%M")
     invoice_filename = f"{today_str}_{preview_cust_id}_{time_in.strftime('%H-%M')}.pdf"
 
-    # ---------------- LIVE YELLOW CASH BILL PREVIEW ----------------
-    with col_preview:
+    # ---------------- PURE WHITE FORMAL INVOICE PREVIEW ----------------
+    with col_bill:
         pkg_display_label = f"Group Combo ({package_name})" if num_kids > 1 else package_name
         socks_row_html = f"<tr><td>Socks</td><td style='text-align:center;'>{num_socks}</td><td style='text-align:right;'>-</td><td style='text-align:right;'>{socks_excl_gst:.2f}</td></tr>" if num_socks > 0 else ""
         water_row_html = f"<tr><td>Water Bottle</td><td style='text-align:center;'>{num_water}</td><td style='text-align:right;'>-</td><td style='text-align:right;'>{water_excl_gst:.2f}</td></tr>" if num_water > 0 else ""
         water_gst_html = f"<tr><td>Water GST</td><td></td><td style='text-align:right;'>{water_gst_pct:.0f}%</td><td style='text-align:right;'>{water_gst_amt:.2f}</td></tr>" if water_gst_amt > 0 else ""
-        card_fee_html = f"<tr><td>Card Fee (+2%)</td><td></td><td style='text-align:right;'>2%</td><td style='text-align:right;'>{card_fee:.2f}</td></tr>" if card_fee > 0 else ""
+        card_fee_html = f"<tr><td>Card Charge (+2%)</td><td></td><td style='text-align:right;'>2%</td><td style='text-align:right;'>{card_fee:.2f}</td></tr>" if card_fee > 0 else ""
 
         st.markdown(f"""
-        <div class="cash-bill">
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:bold;">
+        <div class="white-bill">
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:bold;">
                 <span>CASH BILL</span>
                 <span>GST No: {ENTERPRISE_GST}</span>
             </div>
-            <h3 style="text-align:center; margin-top:6px;">{ENTERPRISE_TITLE}</h3>
-            <p style="text-align:center; font-weight:bold; font-size:0.85rem;">{ENTERPRISE_SUBTITLE}</p>
-            <p style="text-align:center; font-size:0.75rem;">{ENTERPRISE_ADDRESS}</p>
-            <div class="bill-hr"></div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <h2 style="text-align:center; margin-top:6px;">{ENTERPRISE_TITLE}</h2>
+            <p style="text-align:center; font-weight:bold; font-size:0.9rem;">{ENTERPRISE_SUBTITLE}</p>
+            <p style="text-align:center; font-size:0.8rem;">{ENTERPRISE_ADDRESS}<br>Ph: {OFFICIAL_PHONE}</p>
+            <div class="bill-divider"></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
                 <span><b>S.No:</b> {next_sno} ({preview_cust_id})</span>
                 <span><b>Date:</b> {date.today().strftime('%d/%m/%Y')}</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-top:4px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:4px;">
                 <span><b>Name:</b> {adult_name or 'Walk-in'}</span>
-                <span><b>Slot:</b> {time_in_str} - {time_out_str}</span>
+                <span><b>Time:</b> {time_in_str} - {time_out_str}</span>
             </div>
-            <div class="bill-hr"></div>
-            <table style="width:100%; font-size:0.85rem; border-collapse:collapse;">
+            <div class="bill-divider"></div>
+            <table style="width:100%; font-size:0.9rem; border-collapse:collapse;">
                 <thead>
-                    <tr style="border-bottom:1px solid #854d0e;">
-                        <th style="text-align:left;">DESCRIPTION</th>
-                        <th style="text-align:center;">QTY</th>
-                        <th style="text-align:right;">RATE</th>
-                        <th style="text-align:right;">AMOUNT</th>
+                    <tr style="border-bottom:1px solid #000;">
+                        <th style="text-align:left; padding-bottom:4px;">DESCRIPTION</th>
+                        <th style="text-align:center; padding-bottom:4px;">QTY</th>
+                        <th style="text-align:right; padding-bottom:4px;">RATE</th>
+                        <th style="text-align:right; padding-bottom:4px;">AMOUNT</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{pkg_display_label}</td>
+                        <td style="padding-top:4px;">{pkg_display_label}</td>
                         <td style="text-align:center;">{num_kids}</td>
                         <td style="text-align:right;">-</td>
                         <td style="text-align:right;">{pkg_excl_gst:.2f}</td>
@@ -618,26 +649,26 @@ if page == "🧾 POS Billing (Walk-ins)":
                     {card_fee_html}
                 </tbody>
             </table>
-            <div class="bill-hr"></div>
-            <div style="display:flex; justify-content:space-between; font-size:1.1rem; font-weight:bold;">
+            <div class="bill-divider"></div>
+            <div style="display:flex; justify-content:space-between; font-size:1.15rem; font-weight:bold;">
                 <span>Total ({payment_method})</span>
-                <span>₹ {final_total:.2f}</span>
+                <span>Rs. {final_total:.2f}</span>
             </div>
-            <p style="font-size:0.75rem; color:#4b5563; margin-top:4px;">
-                Excl. GST: ₹{total_excl_gst:.2f} | Total GST: ₹{total_gst:.2f}
+            <p style="font-size:0.8rem; margin-top:4px;">
+                Excl. GST: Rs. {total_excl_gst:.2f} | Total GST: Rs. {total_gst:.2f}
             </p>
-            <div style="text-align:right; font-size:0.8rem; margin-top:10px; font-weight:bold;">
+            <div style="text-align:right; font-size:0.85rem; margin-top:12px; font-weight:bold;">
                 For {ENTERPRISE_TITLE}<br>
-                <span style="font-weight:normal;">Logged by: {user['name']} ({user['emp_id']})</span>
+                <span style="font-weight:normal;">Billed by: {user['name']} ({user['emp_id']})</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.caption(f"📁 Drive File Format: `{invoice_filename}`")
+        st.caption(f"Drive File Name: `{invoice_filename}`")
 
-        if st.button("✅ Generate Official Bill & Save to Drive", type="primary", use_container_width=True):
+        if st.button("Save Bill & Generate Invoice", type="primary", use_container_width=True):
             if not adult_name.strip() or not phone.strip():
-                st.error("Please enter both the Adult Name and WhatsApp Phone Number.")
+                st.error("Please enter the Adult Name and Mobile Number.")
             else:
                 bill_record = {
                     "sno": next_sno,
@@ -695,10 +726,8 @@ if page == "🧾 POS Billing (Walk-ins)":
                 conn.commit()
                 conn.close()
 
-                # Increment S.No
                 set_setting("next_sno", str(next_sno + 1))
 
-                # Generate PDF and save locally + upload to Drive
                 pdf_bytes = generate_invoice_pdf_bytes(bill_record)
                 os.makedirs("saved_invoices", exist_ok=True)
                 with open(os.path.join("saved_invoices", invoice_filename), "wb") as f:
@@ -710,40 +739,40 @@ if page == "🧾 POS Billing (Walk-ins)":
                 st.session_state.last_bill = bill_record
                 st.rerun()
 
-        # Post-save WhatsApp & PDF Download Actions
         if st.session_state.last_bill:
             lb = st.session_state.last_bill
-            st.success(f"Bill #{lb['sno']} Logged! ({lb['drive_status']})")
+            st.success(f"Bill #{lb['sno']} Saved! ({lb['drive_status']})")
 
             clean_phone = "".join([ch for ch in lb["phone"] if ch.isdigit()])
             if len(clean_phone) == 10:
                 clean_phone = "91" + clean_phone
 
-            wa_text = (
-                f"*{ENTERPRISE_TITLE} ({ENTERPRISE_SUBTITLE})*\n"
-                f"GST No: {ENTERPRISE_GST}\n"
-                f"------------------------\n"
-                f"S.No: {lb['sno']} | Cust ID: {lb['customer_id']}\n"
-                f"Date: {lb['bill_date']}\n"
-                f"Customer: {lb['adult_name']}\n"
-                f"Slot: {lb['time_in']} to {lb['time_out']}\n"
-                f"------------------------\n"
-                f"Package ({lb['num_kids']} kids): Rs.{lb['pkg_excl_gst']:.2f}\n"
+            receipt_msg = (
+                f"{ENTERPRISE_TITLE} ({ENTERPRISE_SUBTITLE})\n"
+                f"GST: {ENTERPRISE_GST} | Ph: {OFFICIAL_PHONE}\n"
+                f"S.No: {lb['sno']} | ID: {lb['customer_id']}\n"
+                f"Date: {lb['bill_date']} ({lb['time_in']}-{lb['time_out']})\n"
+                f"Name: {lb['adult_name']}\n"
+                f"Pkg ({lb['num_kids']}): Rs.{lb['pkg_excl_gst']:.2f}\n"
                 + (f"Socks ({lb['num_socks']}): Rs.{lb['socks_excl_gst']:.2f}\n" if lb["num_socks"] > 0 else "")
                 + (f"Water ({lb['num_water']}): Rs.{lb['water_excl_gst']:.2f}\n" if lb["num_water"] > 0 else "")
-                + f"SGST (9%): Rs.{lb['sgst_9']:.2f}\n"
-                f"CGST (9%): Rs.{lb['cgst_9']:.2f}\n"
+                + f"SGST 9%: Rs.{lb['sgst_9']:.2f} | CGST 9%: Rs.{lb['cgst_9']:.2f}\n"
                 + (f"Water GST: Rs.{lb['water_gst_amt']:.2f}\n" if lb["water_gst_amt"] > 0 else "")
-                + (f"Card Fee (2%): Rs.{lb['card_fee']:.2f}\n" if lb["card_fee"] > 0 else "")
-                + f"------------------------\n"
-                f"*TOTAL PAID ({lb['payment_method']}): Rs.{lb['final_total']:.2f}*\n"
-                f"Thank you for visiting {ENTERPRISE_TITLE}!"
+                + (f"Card Fee 2%: Rs.{lb['card_fee']:.2f}\n" if lb["card_fee"] > 0 else "")
+                + f"TOTAL ({lb['payment_method']}): Rs.{lb['final_total']:.2f}"
             )
-            wa_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(wa_text)}"
 
-            st.markdown(f'<a href="{wa_url}" target="_blank" class="wa-btn">📲 Send Invoice Copy to Customer WhatsApp</a>', unsafe_allow_html=True)
+            wa_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(receipt_msg)}"
+            sms_url = f"sms:+{clean_phone}?body={urllib.parse.quote(receipt_msg)}"
+
+            b_col1, b_col2 = st.columns(2)
+            with b_col1:
+                st.markdown(f'<a href="{wa_url}" target="_blank" class="action-btn wa-btn">Send via WhatsApp</a>', unsafe_allow_html=True)
+            with b_col2:
+                st.markdown(f'<a href="{sms_url}" class="action-btn sms-btn">Send SMS ({OFFICIAL_PHONE})</a>', unsafe_allow_html=True)
+
             st.download_button(
-                label=f"⬇️ Download PDF Invoice ({lb['invoice_filename']})",
+                label=f"Download Official PDF ({lb['invoice_filename']})",
                 data=lb["pdf_bytes"],
                 file_name=lb["invoice_filename"],
                 mime="application/pdf",
@@ -751,52 +780,48 @@ if page == "🧾 POS Billing (Walk-ins)":
             )
 
 # ==============================================================================
-# PAGE 2: MONTHLY MEMBERSHIPS (ROYAL PURPLE DISTINCT UI - NO INVOICE / NO WHATSAPP)
+# TAB 2: MONTHLY MEMBERSHIPS (NAVY BORDERED THEME - NO INVOICE GENERATED)
 # ==============================================================================
-elif page == "👑 Monthly Memberships":
+with tab_mem:
     st.markdown("""
-    <div class="member-banner">
-        <h2 style="margin:0; color:white;">👑 Monthly Membership Lounge & Check-In</h2>
-        <p style="margin:4px 0 0 0; opacity:0.9;">
-            Separate Member Zone • Attendance logs directly to Live Occupancy & Master Report without creating a bill or sending WhatsApp invoices.
+    <div class="member-header">
+        <h3 style="margin:0; color:white;">Monthly Membership Check-In & Directory</h3>
+        <p style="margin:2px 0 0 0; font-size:0.9rem; color:#e2e8f0;">
+            Attendance logs directly to Occupancy & Master Reports without generating a cash bill or sending an invoice.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    tab_checkin, tab_register, tab_history = st.tabs([
-        "✅ Quick Member Check-In (Time In / Out)",
-        "➕ Register New Monthly Member",
-        "📊 Member Utilization History"
-    ])
+    m_col1, m_col2 = st.columns([1.1, 1])
 
     conn = get_conn()
     members_df = pd.read_sql_query("SELECT * FROM members ORDER BY member_id DESC", conn)
     conn.close()
 
-    with tab_checkin:
-        st.markdown('<div class="member-card">', unsafe_allow_html=True)
-        st.subheader("Log Member Play Session")
+    with m_col1:
+        st.markdown('<div class="member-zone">', unsafe_allow_html=True)
+        st.markdown("#### Quick Member Check-In (Time In / Time Out)")
         if members_df.empty:
-            st.info("No monthly members registered yet. Use the 'Register New Monthly Member' tab first.")
+            st.info("No members registered yet. Add a member on the right first.")
         else:
             member_options = [
-                f"{row['member_id']} — {row['child_name']} (Parent: {row['adult_name']} | {row['phone']})"
+                f"{row['member_id']} — {row['child_name']} ({row['adult_name']} | {row['phone']})"
                 for _, row in members_df.iterrows()
             ]
             selected_member_str = st.selectbox("Select Member ID", member_options)
             selected_member_id = selected_member_str.split(" — ")[0]
             m_row = members_df[members_df["member_id"] == selected_member_id].iloc[0]
 
-            mc1, mc2, mc3 = st.columns(3)
             now_dt = datetime.now()
+            mc1, mc2, mc3 = st.columns(3)
             with mc1:
-                visit_date = st.date_input("Visit Date", value=date.today())
+                visit_date = st.date_input("Date", value=date.today())
             with mc2:
                 m_time_in = st.time_input("Member Time In", value=now_dt.time().replace(second=0, microsecond=0))
             with mc3:
-                m_time_out = st.time_input("Expected Time Out", value=(now_dt + timedelta(hours=1)).time().replace(second=0, microsecond=0))
+                m_time_out = st.time_input("Member Time Out", value=(now_dt + timedelta(hours=1)).time().replace(second=0, microsecond=0))
 
-            if st.button("👑 Log Member Attendance (No Invoice / No WhatsApp)", type="primary", use_container_width=True):
+            if st.button("Log Member Visit (No Invoice)", type="primary", use_container_width=True):
                 conn = get_conn()
                 c = conn.cursor()
                 c.execute('''INSERT INTO member_visits (
@@ -810,12 +835,12 @@ elif page == "👑 Monthly Memberships":
                 ))
                 conn.commit()
                 conn.close()
-                st.success(f"Logged visit for Member `{m_row['member_id']}` ({m_row['child_name']}) from {m_time_in.strftime('%H:%M')} to {m_time_out.strftime('%H:%M')}!")
+                st.success(f"Visit logged for {m_row['child_name']} ({m_row['member_id']}) [{m_time_in.strftime('%H:%M')} - {m_time_out.strftime('%H:%M')}].")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with tab_register:
-        st.markdown('<div class="member-card">', unsafe_allow_html=True)
-        st.subheader("Create New Monthly Subscription ID")
+    with m_col2:
+        st.markdown('<div class="member-zone">', unsafe_allow_html=True)
+        st.markdown("#### Register New Monthly Member")
         next_mem_num = 1001 + len(members_df)
         suggested_mem_id = f"MEM-{next_mem_num}"
 
@@ -824,17 +849,14 @@ elif page == "👑 Monthly Memberships":
             with f1:
                 new_mem_id = st.text_input("Member ID", value=suggested_mem_id)
                 child_name = st.text_input("Child Name *")
-                adult_name = st.text_input("Parent / Adult Name *")
+                m_adult_name = st.text_input("Parent Name *")
             with f2:
-                m_phone = st.text_input("Phone Number *")
+                m_phone = st.text_input("Mobile Number *")
                 start_d = st.date_input("Start Date", value=date.today())
-                expiry_d = st.date_input("Expiry Date (30 Days)", value=date.today() + timedelta(days=30))
-            notes = st.text_input("Notes (Optional)")
-            reg_btn = st.form_submit_button("Save New Monthly Member", type="primary")
-
-            if reg_btn:
-                if not child_name.strip() or not adult_name.strip() or not m_phone.strip():
-                    st.error("Please fill in Child Name, Parent Name, and Phone Number.")
+                expiry_d = st.date_input("Expiry Date", value=date.today() + timedelta(days=30))
+            if st.form_submit_button("Register Member", use_container_width=True):
+                if not child_name.strip() or not m_adult_name.strip() or not m_phone.strip():
+                    st.error("All fields are required.")
                 else:
                     conn = get_conn()
                     c = conn.cursor()
@@ -842,107 +864,79 @@ elif page == "👑 Monthly Memberships":
                         c.execute('''INSERT INTO members (
                             member_id, child_name, adult_name, phone, start_date, expiry_date, notes, created_by
                         ) VALUES (?,?,?,?,?,?,?,?)''', (
-                            new_mem_id.strip(), child_name.strip(), adult_name.strip(),
+                            new_mem_id.strip(), child_name.strip(), m_adult_name.strip(),
                             m_phone.strip(), start_d.strftime("%Y-%m-%d"),
-                            expiry_d.strftime("%Y-%m-%d"), notes.strip(), user["emp_id"]
+                            expiry_d.strftime("%Y-%m-%d"), "", user["emp_id"]
                         ))
                         conn.commit()
-                        st.success(f"Monthly Member `{new_mem_id}` created!")
+                        st.success(f"Member {new_mem_id} created.")
                         st.rerun()
                     except sqlite3.IntegrityError:
-                        st.error("That Member ID already exists.")
+                        st.error("Member ID already exists.")
                     finally:
                         conn.close()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with tab_history:
-        conn = get_conn()
-        visits_df = pd.read_sql_query("SELECT * FROM member_visits ORDER BY id DESC", conn)
-        conn.close()
-
-        st.markdown("##### Member Utilization Summary (Total Visits per Member)")
-        if not visits_df.empty:
-            util_summary = visits_df.groupby(["member_id", "child_name", "adult_name", "phone"]).size().reset_index(name="Total Visits")
-            st.dataframe(util_summary, use_container_width=True)
-            st.markdown("##### Detailed Check-In Logs")
-            st.dataframe(visits_df, use_container_width=True)
-        else:
-            st.info("No member visits logged yet.")
+    conn = get_conn()
+    visits_df = pd.read_sql_query("SELECT * FROM member_visits ORDER BY id DESC", conn)
+    conn.close()
+    if not visits_df.empty:
+        st.markdown("#### Member Utilization Summary")
+        util_summary = visits_df.groupby(["member_id", "child_name", "adult_name", "phone"]).size().reset_index(name="Total Visits Logged")
+        st.dataframe(util_summary, use_container_width=True)
 
 # ==============================================================================
-# PAGE 3: LIVE OCCUPANCY & TIME-SLOT TRACKER (e.g. 10:00 TO 11:00)
+# TAB 3: LIVE OCCUPANCY & TIME-SLOT TRACKER
 # ==============================================================================
-elif page == "🕒 Live Occupancy & Slot Tracker":
-    st.subheader("🕒 Time-Slot Occupancy Tracker")
-    st.caption("See exactly how many walk-in kids (X) and monthly members (Y) were inside the playhouse during any time window.")
-
+with tab_occ:
+    st.markdown("#### Check Headcount by Time Window (e.g. 10:00 to 11:00)")
     fc1, fc2, fc3 = st.columns(3)
     with fc1:
-        slot_date = st.date_input("Select Date", value=date.today())
+        slot_date = st.date_input("Select Date", value=date.today(), key="occ_date")
     with fc2:
-        slot_start = st.time_input("From Time (e.g. 10:00)", value=time(10, 0))
+        slot_start = st.time_input("From Time", value=time(10, 0), key="occ_start")
     with fc3:
-        slot_end = st.time_input("To Time (e.g. 11:00)", value=time(11, 0))
+        slot_end = st.time_input("To Time", value=time(11, 0), key="occ_end")
 
     slot_date_str = slot_date.strftime("%Y-%m-%d")
-
     conn = get_conn()
     day_tx = pd.read_sql_query("SELECT * FROM transactions WHERE bill_date=?", conn, params=(slot_date_str,))
     day_mem = pd.read_sql_query("SELECT * FROM member_visits WHERE visit_date=?", conn, params=(slot_date_str,))
     conn.close()
 
-    # Filter overlapping walk-in bills
-    active_walkins = []
-    for _, row in day_tx.iterrows():
-        if time_overlaps(row["time_in"], row["time_out"], slot_start, slot_end):
-            active_walkins.append(row)
-    walkin_df = pd.DataFrame(active_walkins)
+    walkin_rows = [r for _, r in day_tx.iterrows() if time_overlaps(r["time_in"], r["time_out"], slot_start, slot_end)]
+    mem_rows = [r for _, r in day_mem.iterrows() if time_overlaps(r["time_in"], r["time_out"], slot_start, slot_end)]
 
-    # Filter overlapping member visits
-    active_members = []
-    for _, row in day_mem.iterrows():
-        if time_overlaps(row["time_in"], row["time_out"], slot_start, slot_end):
-            active_members.append(row)
-    mem_slot_df = pd.DataFrame(active_members)
+    walkin_df = pd.DataFrame(walkin_rows)
+    mem_slot_df = pd.DataFrame(mem_rows)
 
     x_regular_kids = int(walkin_df["num_kids"].sum()) if not walkin_df.empty else 0
     y_member_kids = len(mem_slot_df)
-    total_kids_in_slot = x_regular_kids + y_member_kids
 
     m1, m2, m3 = st.columns(3)
-    m1.metric("🧒 X: Walk-In Kids in Slot", x_regular_kids, f"{len(walkin_df)} Bookings")
-    m2.metric("👑 Y: Monthly Members in Slot", y_member_kids, "Active Members")
-    m3.metric("🎈 Total Headcount in Playhouse", total_kids_in_slot, f"{slot_start.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}")
+    m1.metric("Regular Walk-In Kids (X)", x_regular_kids)
+    m2.metric("Monthly Members Present (Y)", y_member_kids)
+    m3.metric("Total Kids in Playhouse", x_regular_kids + y_member_kids)
 
-    st.write("---")
     col_w, col_m = st.columns(2)
     with col_w:
-        st.markdown(f"##### 🧾 Walk-In Customers ({slot_start.strftime('%H:%M')} – {slot_end.strftime('%H:%M')})")
+        st.markdown("##### Walk-In Customers Present")
         if not walkin_df.empty:
-            st.dataframe(
-                walkin_df[["customer_id", "adult_name", "phone", "package", "num_kids", "time_in", "time_out", "emp_name"]],
-                use_container_width=True
-            )
+            st.dataframe(walkin_df[["customer_id", "adult_name", "phone", "package", "num_kids", "time_in", "time_out", "emp_name"]], use_container_width=True)
         else:
-            st.info("No walk-in customers during this time slot.")
-
+            st.info("No walk-in customers during this window.")
     with col_m:
-        st.markdown(f"##### 👑 Monthly Members Present ({slot_start.strftime('%H:%M')} – {slot_end.strftime('%H:%M')})")
+        st.markdown("##### Monthly Members Present")
         if not mem_slot_df.empty:
-            st.dataframe(
-                mem_slot_df[["member_id", "child_name", "adult_name", "phone", "time_in", "time_out", "logged_by_name"]],
-                use_container_width=True
-            )
+            st.dataframe(mem_slot_df[["member_id", "child_name", "adult_name", "phone", "time_in", "time_out", "logged_by_name"]], use_container_width=True)
         else:
-            st.info("No monthly members logged during this time slot.")
+            st.info("No monthly members during this window.")
 
 # ==============================================================================
-# PAGE 4: 24-HOUR SHIFT CLOSING & RESET TO NIL
+# TAB 4: 24-HOUR SHIFT CLOSING & NIL RESET
 # ==============================================================================
-elif page == "🔒 Shift Closing (24-Hr Reset)":
-    st.subheader("🔒 Active Shift Summary & Complete Closing")
-    st.caption("Closing the shift consolidates all active transactions into a Master Excel Report, sends it to the Admin Gmail & Drive, and resets the shift dashboard back to zero (Nil) for the next day.")
-
+with tab_close:
+    st.markdown("#### Current 24-Hour Shift Summary & Complete Closing")
     conn = get_conn()
     if user["role"] == "admin":
         active_tx = pd.read_sql_query("SELECT * FROM transactions WHERE is_closed=0", conn)
@@ -960,22 +954,14 @@ elif page == "🔒 Shift Closing (24-Hr Reset)":
 
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Active Shift Bills", my_tx_count)
-    k2.metric("Shift Total Revenue", f"₹ {my_revenue:.2f}")
-    k3.metric("Cash / UPI", f"₹ {my_cash:.0f} / ₹ {my_upi:.0f}")
-    k4.metric("Card (+2%)", f"₹ {my_card:.2f}")
+    k2.metric("Total Shift Collection", f"Rs. {my_revenue:.2f}")
+    k3.metric("Cash / UPI", f"Rs. {my_cash:.0f} / Rs. {my_upi:.0f}")
+    k4.metric("Card (+2%)", f"Rs. {my_card:.2f}")
 
-    st.markdown("##### 📋 Active Shift Bills (Current 24-Hr Cycle)")
     if not active_tx.empty:
-        st.dataframe(
-            active_tx[["sno", "customer_id", "adult_name", "phone", "package", "num_kids", "time_in", "time_out", "payment_method", "final_total", "emp_name"]],
-            use_container_width=True
-        )
+        st.dataframe(active_tx[["sno", "customer_id", "adult_name", "phone", "package", "num_kids", "time_in", "time_out", "payment_method", "final_total", "emp_name"]], use_container_width=True)
     else:
-        st.success("✨ Dashboard is currently at NIL (0 active transactions). Ready for a fresh shift!")
-
-    st.write("---")
-    st.markdown("### 🚨 Complete Closing (End of 24-Hour Shift)")
-    st.warning("Clicking **Complete Closing** will generate the consolidated Master Excel Report, send it to the Admin's Email & Google Drive, and reset all active shift counters to **0 (Nil)** for tomorrow.")
+        st.success("Shift counter is at NIL (0 active transactions). Ready for a new day.")
 
     if not all_active_tx.empty or not all_active_visits.empty:
         emp_summary = all_active_tx.groupby(["emp_id", "emp_name", "payment_method"]).agg(
@@ -984,30 +970,27 @@ elif page == "🔒 Shift Closing (24-Hr Reset)":
         ).reset_index() if not all_active_tx.empty else pd.DataFrame()
 
         master_excel_bytes = build_master_excel(all_active_tx, emp_summary, all_active_visits)
-        closing_filename = f"Master_Closing_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+        closing_filename = f"Master_Closing_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
 
         st.download_button(
-            "⬇️ Download Current Shift Master Excel (.xlsx)",
+            "Download Shift Master Excel (.xlsx)",
             data=master_excel_bytes,
             file_name=closing_filename,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-        if st.button("✅ COMPLETE CLOSING — Send Master Report & Reset Dashboard to Nil", type="primary", use_container_width=True):
-            # 1. Email Excel Report to Admin
+        if st.button("COMPLETE CLOSING — Email to Admin, Save to Drive & Reset Shift to Nil", type="primary", use_container_width=True):
             ok_mail, mail_msg = send_email_with_excel(
                 master_excel_bytes,
                 closing_filename,
-                subject=f"[{ENTERPRISE_TITLE}] Complete Shift Closing Report - {date.today()}",
-                body_text=f"Shift closed by {user['name']} ({user['emp_id']}). Attached is the consolidated Master Excel Report."
+                subject=f"[{ENTERPRISE_TITLE}] Daily Shift Closing Report - {date.today()}",
+                body_text=f"Shift closed by {user['name']} ({user['emp_id']}). Master Excel attached."
             )
-            # 2. Upload Master Excel to Admin Google Drive
             ok_drive, drive_msg = upload_to_gdrive(
                 master_excel_bytes,
                 closing_filename,
                 mime_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            # 3. Reset active shift transactions & visits to Nil (is_closed = 1)
             conn = get_conn()
             c = conn.cursor()
             c.execute("UPDATE transactions SET is_closed=1 WHERE is_closed=0")
@@ -1016,113 +999,86 @@ elif page == "🔒 Shift Closing (24-Hr Reset)":
             conn.close()
 
             st.session_state.last_bill = None
-            st.success(f"Shift Closed & Reset to Nil! | {mail_msg} | {drive_msg}")
+            st.success(f"Shift Reset to Nil! | {mail_msg} | {drive_msg}")
             st.rerun()
 
 # ==============================================================================
-# PAGE 5: ADMIN MASTER PORTAL & EMPLOYEE MANAGEMENT
+# TAB 5: ADMIN MASTER PORTAL & STAFF MANAGEMENT
 # ==============================================================================
-elif page == "📊 Admin Master Portal & Staff" and user["role"] == "admin":
-    st.subheader("📊 Admin Master Consolidation & Staff Management")
-
-    t_master, t_staff, t_settings = st.tabs([
-        "📈 Consolidated Master Report",
-        "👥 Create & Manage Employee Accounts",
-        "⚙️ GST, S.No & Admin Gmail Settings"
-    ])
-
-    with t_master:
+if tab_admin is not None:
+    with tab_admin:
+        st.markdown("#### Consolidated Employee Master Report")
         conn = get_conn()
         all_tx = pd.read_sql_query("SELECT * FROM transactions ORDER BY id DESC", conn)
         all_visits = pd.read_sql_query("SELECT * FROM member_visits ORDER BY id DESC", conn)
         conn.close()
 
         if not all_tx.empty:
-            st.markdown("##### 👨‍💼 Employee-Wise Consolidated Performance")
             emp_perf = all_tx.groupby(["emp_id", "emp_name"]).agg(
-                Total_Bills=("id", "count"),
-                Kids_Served=("num_kids", "sum"),
-                Excl_GST_Total=("total_excl_gst", "sum"),
-                GST_Collected=("total_gst", "sum"),
-                Card_Fees=("card_fee", "sum"),
-                Grand_Total_Collected=("final_total", "sum")
+                Transactions=("id", "count"),
+                Kids_Count=("num_kids", "sum"),
+                Excl_GST=("total_excl_gst", "sum"),
+                GST_Amount=("total_gst", "sum"),
+                Card_Charges=("card_fee", "sum"),
+                Total_Collected=("final_total", "sum")
             ).reset_index()
             st.dataframe(emp_perf, use_container_width=True)
 
             full_excel = build_master_excel(all_tx, emp_perf, all_visits)
             st.download_button(
-                "📥 Download Complete Historical Master Excel Report",
+                "Download Full Historical Master Excel (.xlsx)",
                 data=full_excel,
                 file_name=f"Algebra_Playhouse_Master_{date.today()}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 type="primary"
             )
 
-            st.markdown("##### 🧾 All Logged Invoices (Active + Archived Shifts)")
-            st.dataframe(all_tx, use_container_width=True)
-        else:
-            st.info("No transactions logged yet.")
+        st.write("---")
+        col_staff, col_cfg = st.columns(2)
 
-    with t_staff:
-        c_add, c_list = st.columns([1, 1.3])
-        with c_add:
-            st.markdown("##### ➕ Add Employee / Admin Account")
+        with col_staff:
+            st.markdown("#### Create Employee Login")
             with st.form("add_emp_form"):
                 new_emp_id = st.text_input("Employee ID *", placeholder="e.g. EMP01")
-                new_emp_name = st.text_input("Employee Full Name *", placeholder="e.g. Karthik")
-                new_emp_email = st.text_input("Email / Gmail", placeholder="staff@gmail.com")
+                new_emp_name = st.text_input("Employee Name *")
                 new_emp_pwd = st.text_input("Password *", type="password")
                 new_emp_role = st.selectbox("Role", ["employee", "admin"])
-                save_emp = st.form_submit_button("Create Account", type="primary")
-
-                if save_emp:
-                    if not new_emp_id.strip() or not new_emp_name.strip() or not new_emp_pwd.strip():
-                        st.error("Employee ID, Name, and Password are required.")
-                    else:
+                if st.form_submit_button("Create Staff Account", use_container_width=True):
+                    if new_emp_id.strip() and new_emp_name.strip() and new_emp_pwd.strip():
                         conn = get_conn()
                         c = conn.cursor()
                         try:
                             c.execute(
                                 "INSERT INTO users (emp_id, name, email, password, role) VALUES (?,?,?,?,?)",
-                                (new_emp_id.strip(), new_emp_name.strip(), new_emp_email.strip(), new_emp_pwd.strip(), new_emp_role)
+                                (new_emp_id.strip(), new_emp_name.strip(), "", new_emp_pwd.strip(), new_emp_role)
                             )
                             conn.commit()
-                            st.success(f"Created account `{new_emp_id}` for {new_emp_name}!")
+                            st.success(f"Employee {new_emp_id} added.")
                             st.rerun()
                         except sqlite3.IntegrityError:
                             st.error("Employee ID already exists.")
                         finally:
                             conn.close()
 
-        with c_list:
-            st.markdown("##### 👥 Registered Staff Accounts")
             conn = get_conn()
             users_df = pd.read_sql_query("SELECT emp_id, name, email, role FROM users", conn)
             conn.close()
             st.dataframe(users_df, use_container_width=True)
 
-    with t_settings:
-        st.markdown("##### ⚙️ Playhouse Master Configuration")
-        curr_sno = get_setting("next_sno", "1079")
-        curr_admin_email = get_setting("admin_email", "admin@gmail.com")
-        curr_card_mode = get_setting("card_fee_base", "Including GST")
-
-        with st.form("settings_form"):
-            new_admin_email = st.text_input("Admin Master Gmail ID (Receives Closing Excel Reports)", value=curr_admin_email)
-            new_next_sno = st.number_input("Next Cash Bill S.No (Matches Physical Bill Book)", min_value=1, value=int(curr_sno))
-            new_card_mode = st.selectbox(
-                "2% Card Payment Fee Calculation Base",
-                ["Including GST", "Excluding GST"],
-                index=0 if curr_card_mode == "Including GST" else 1
-            )
-            if st.form_submit_button("Save Master Settings", type="primary"):
-                set_setting("admin_email", new_admin_email.strip())
-                set_setting("next_sno", str(new_next_sno))
-                set_setting("card_fee_base", new_card_mode)
-                # Also update ADMIN01 email so Admin can log in with their Gmail directly
-                conn = get_conn()
-                c = conn.cursor()
-                c.execute("UPDATE users SET email=? WHERE emp_id='ADMIN01'", (new_admin_email.strip(),))
-                conn.commit()
-                conn.close()
-                st.success("Master settings updated! You can now log in with your Admin Gmail.")
+        with col_cfg:
+            st.markdown("#### Billing & Admin Settings")
+            curr_sno = get_setting("next_sno", "1079")
+            curr_card_mode = get_setting("card_fee_base", "Including GST")
+            with st.form("settings_form"):
+                st.text_input("Linked Google Account", value=OFFICIAL_EMAIL, disabled=True)
+                st.text_input("Linked SMS / WhatsApp Number", value=OFFICIAL_PHONE, disabled=True)
+                new_next_sno = st.number_input("Next Bill S.No", min_value=1, value=int(curr_sno))
+                new_card_mode = st.selectbox(
+                    "2% Card Surcharge Base",
+                    ["Including GST", "Excluding GST"],
+                    index=0 if curr_card_mode == "Including GST" else 1
+                )
+                if st.form_submit_button("Save Settings", use_container_width=True):
+                    set_setting("next_sno", str(new_next_sno))
+                    set_setting("card_fee_base", new_card_mode)
+                    st.success("Settings saved.")
